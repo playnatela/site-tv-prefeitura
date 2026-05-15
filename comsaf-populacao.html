@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COMSAF — População dos Municípios</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Lora:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --river:      #1a5c8a;
+    --river-mid:  #2d7ab0;
+    --river-lt:   #b0d8f0;
+    --river-pale: #e8f4fb;
+    --sand:       #c8800a;
+    --sand-lt:    #f0d4a0;
+    --sand-pale:  #fdf5e6;
+    --earth:      #6b4020;
+    --earth-lt:   #d4b090;
+    --earth-pale: #faf0e8;
+    --ink:        #0d1f2d;
+    --ink-soft:   #2c4a5e;
+    --ink-muted:  #6b8ba4;
+    --paper:      #f8fbfd;
+    --paper-warm: #f0f6fb;
+    --paper-deep: #dceef8;
+    --rule:       #b8d4e8;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Lora', serif;
+    background: var(--paper);
+    color: var(--ink);
+    font-size: 16px;
+    line-height: 1.65;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--ink);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hdr-wave {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 80% 100% at 60% 120%, rgba(29,92,138,.5) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 60% at 0% 0%, rgba(45,122,176,.2) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  /* wavy lines evocando o rio */
+  .hdr-lines {
+    position: absolute; inset: 0;
+    opacity: .07;
+    background-image: repeating-linear-gradient(
+      -8deg,
+      transparent 0px, transparent 18px,
+      rgba(255,255,255,.8) 18px, rgba(255,255,255,.8) 20px
+    );
+    pointer-events: none;
+  }
+
+  .hdr-inner {
+    position: relative;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 4.5rem 2rem 3rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2rem;
+    align-items: end;
+  }
+
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--river-lt);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .eyebrow::before {
+    content: '';
+    width: 28px; height: 1px;
+    background: var(--river-lt);
+    display: inline-block;
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2.8rem, 6vw, 5rem);
+    font-weight: 800;
+    line-height: .95;
+    letter-spacing: -.02em;
+    color: #fff;
+  }
+
+  h1 em {
+    color: var(--river-lt);
+    font-style: normal;
+  }
+
+  .hdr-sub {
+    font-family: 'Lora', serif;
+    font-size: 13.5px;
+    font-style: italic;
+    color: rgba(248,251,253,.55);
+    margin-top: 1rem;
+    max-width: 520px;
+    line-height: 1.75;
+  }
+
+  .hdr-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    align-items: flex-end;
+  }
+
+  .hdr-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 3rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+    display: block;
+    letter-spacing: -.02em;
+  }
+
+  .hdr-lbl {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: rgba(248,251,253,.4);
+    margin-top: 3px;
+    display: block;
+    text-align: right;
+  }
+
+  .hdr-rule { height: 1px; background: rgba(255,255,255,.09); }
+
+  .hdr-tape {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: .75rem 2rem;
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .08em;
+    color: rgba(248,251,253,.38);
+  }
+
+  .hdr-tape span { display: flex; align-items: center; gap: 6px; }
+  .hdr-tape span::before { content: '◈'; font-size: 7px; color: var(--river-lt); }
+
+  /* ── MAIN ── */
+  main { max-width: 1100px; margin: 0 auto; padding: 3rem 2rem 5rem; }
+
+  /* ── SECTION ── */
+  .sec-head {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 1.5rem;
+    padding-bottom: .75rem;
+    border-bottom: 1.5px solid var(--rule);
+  }
+
+  .sec-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .sec-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    border: 1px solid var(--rule);
+    padding: 2px 8px;
+    border-radius: 2px;
+  }
+
+  /* ── KPI ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin: 2.5rem 0 3rem;
+  }
+
+  .kpi {
+    background: var(--paper);
+    padding: 1.5rem 1.75rem;
+    transition: background .15s;
+  }
+
+  .kpi:hover { background: var(--paper-warm); }
+
+  .kpi-val {
+    font-family: 'Syne', sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .kpi-lbl {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: .07em;
+  }
+
+  .kpi-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-muted);
+    margin-top: 5px;
+  }
+
+  .k-r { border-top: 3px solid var(--river); }
+  .k-s { border-top: 3px solid var(--sand); }
+  .k-e { border-top: 3px solid var(--earth); }
+  .k-g { border-top: 3px solid #2d8a4e; }
+
+  /* ── CHART ── */
+  .chart-box {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 1.5rem;
+    margin-bottom: 3rem;
+  }
+
+  .chart-ctr { position: relative; width: 100%; height: 340px; }
+
+  /* ── DOIS PAINEIS ── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin-bottom: 3rem;
+  }
+
+  .panel {
+    background: var(--paper);
+    padding: 1.5rem;
+  }
+
+  .panel-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--ink);
+  }
+
+  /* ── TOP 5 ── */
+  .top5 { list-style: none; }
+
+  .top5-row {
+    display: grid;
+    grid-template-columns: 28px 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .top5-row:last-child { border-bottom: none; }
+
+  .top5-n {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--river);
+    text-align: center;
+  }
+
+  .top5-name { font-weight: 600; font-size: 14px; }
+
+  .top5-bar {
+    height: 3px;
+    background: var(--river-mid);
+    margin-top: 4px;
+    border-radius: 1px;
+  }
+
+  .top5-pop {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  /* ── DONUT ── */
+  .donut-ctr { position: relative; width: 100%; height: 220px; }
+
+  .donut-leg {
+    margin-top: .75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .leg-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-soft); }
+
+  .leg-sw { width: 10px; height: 10px; border-radius: 1px; flex-shrink: 0; }
+
+  .leg-pct {
+    margin-left: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-muted);
+  }
+
+  /* ── MUNICIPIOS GRID ── */
+  .mun-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin-bottom: 3rem;
+  }
+
+  .mun-card {
+    background: var(--paper);
+    padding: 1rem 1.25rem;
+    transition: background .15s;
+    position: relative;
+  }
+
+  .mun-card:hover { background: var(--paper-warm); }
+
+  .mun-rank {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-muted);
+    margin-bottom: 2px;
+    letter-spacing: .1em;
+  }
+
+  .mun-name {
+    font-family: 'Syne', sans-serif;
+    font-size: .95rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 4px;
+    line-height: 1.2;
+  }
+
+  .mun-pop {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--river);
+  }
+
+  .mun-pct {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-muted);
+    margin-top: 2px;
+  }
+
+  .mun-bar-bg { height: 3px; background: var(--paper-deep); margin-top: 8px; border-radius: 1px; }
+  .mun-bar-fg { height: 3px; background: var(--river-mid); border-radius: 1px; }
+
+  .mun-prefeito {
+    font-family: 'Lora', serif;
+    font-size: 11px;
+    font-style: italic;
+    color: var(--ink-muted);
+    margin-top: 6px;
+    line-height: 1.4;
+  }
+
+  /* ── TABLE ── */
+  .tbl-ctrl {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .s-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all .15s;
+  }
+
+  .s-btn:hover { background: var(--paper-warm); border-color: var(--ink-muted); }
+  .s-btn.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+  .srch-wrap { margin-left: auto; position: relative; }
+
+  .srch-inp {
+    font-family: 'Lora', serif;
+    font-size: 13px;
+    padding: 6px 14px 6px 30px;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    color: var(--ink);
+    width: 200px;
+    outline: none;
+    transition: border-color .15s;
+  }
+
+  .srch-inp:focus { border-color: var(--ink-soft); }
+
+  .srch-ico {
+    position: absolute; left: 10px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--ink-muted); font-size: 13px;
+    pointer-events: none;
+  }
+
+  .dtbl {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid var(--rule);
+    font-size: 13.5px;
+  }
+
+  .dtbl thead tr { background: var(--ink); color: #fff; }
+
+  .dtbl th {
+    padding: 10px 15px;
+    text-align: left;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    font-weight: 400;
+  }
+
+  .dtbl th.r { text-align: right; }
+
+  .dtbl tbody tr { border-bottom: 1px solid var(--rule); transition: background .12s; }
+  .dtbl tbody tr:hover { background: var(--paper-warm); }
+  .dtbl tbody tr:last-child { border-bottom: none; }
+  .dtbl td { padding: 10px 15px; vertical-align: middle; }
+
+  .td-rank { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--ink-muted); }
+  .td-name { font-weight: 600; font-family: 'Lora', serif; }
+  .td-pref { font-style: italic; font-size: 12px; color: var(--ink-muted); font-family: 'Lora', serif; }
+  .td-pop { text-align: right; font-family: 'JetBrains Mono', monospace; font-weight: 500; color: var(--river); }
+  .td-pct { text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: var(--ink-muted); }
+
+  .bar-cell { width: 120px; }
+  .bar-bg { height: 5px; background: var(--paper-deep); border-radius: 1px; overflow: hidden; }
+  .bar-fg { height: 5px; background: var(--river-mid); border-radius: 1px; }
+
+  .badge {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    padding: 2px 7px;
+    border-radius: 2px;
+    letter-spacing: .04em;
+  }
+
+  .b-lg { background: var(--river-pale); color: var(--river); }
+  .b-md { background: var(--sand-pale); color: var(--sand); }
+  .b-sm { background: var(--earth-pale); color: var(--earth); }
+  .b-xs { background: var(--paper-deep); color: var(--ink-muted); }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--ink);
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .foot-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: rgba(248,251,253,.4);
+    letter-spacing: .04em;
+    line-height: 1.9;
+  }
+
+  .foot-inner a { color: var(--river-lt); text-decoration: none; }
+  .foot-inner a:hover { text-decoration: underline; }
+  .foot-inner strong { color: rgba(248,251,253,.7); font-weight: 500; }
+
+  /* ── NOTA FUNDAÇÃO ── */
+  .founding-note {
+    background: var(--river-pale);
+    border-left: 3px solid var(--river-mid);
+    padding: .9rem 1.2rem;
+    margin-bottom: 3rem;
+    font-family: 'Lora', serif;
+    font-size: 13.5px;
+    font-style: italic;
+    color: var(--ink-soft);
+    line-height: 1.7;
+  }
+
+  /* ── ANIM ── */
+  @keyframes up { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
+  .kpi, .chart-box, .panel, .mun-card, .dtbl { animation: up .45s ease both; }
+
+  @media (max-width: 700px) {
+    .hdr-inner { grid-template-columns: 1fr; }
+    .hdr-stats { flex-direction: row; }
+    .hdr-lbl { text-align: left; }
+    .two-col { grid-template-columns: 1fr; }
+    .bar-cell, .td-pct, .td-pref { display: none; }
+    h1 { font-size: 2.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-wave"></div>
+  <div class="hdr-lines"></div>
+  <div class="hdr-inner">
+    <div>
+      <div class="eyebrow">Consórcio Intermunicipal Multifinalitário — Vale do Rio São Francisco · MG</div>
+      <h1>COM<em>SAF</em></h1>
+      <p class="hdr-sub">Dados populacionais dos 13 municípios fundadores do Consórcio Intermunicipal Multifinalitário de Gestão Pública dos Municípios do Vale do Rio São Francisco no Estado de Minas Gerais, constituído em 11 de abril de 2025. Censo Demográfico IBGE 2022.</p>
+    </div>
+    <div class="hdr-stats">
+      <div>
+        <span class="hdr-num" id="totalPop">—</span>
+        <span class="hdr-lbl">Habitantes totais</span>
+      </div>
+      <div>
+        <span class="hdr-num">13</span>
+        <span class="hdr-lbl">Municípios fundadores</span>
+      </div>
+    </div>
+  </div>
+  <div class="hdr-rule"></div>
+  <div class="hdr-tape">
+    <span>Norte de Minas Gerais</span>
+    <span>Vale do Rio São Francisco</span>
+    <span>Fundação: 11 abr. 2025</span>
+    <span>Sede: Varzelândia — MG</span>
+    <span>Censo IBGE 2022</span>
+  </div>
+</header>
+
+<main>
+
+  <div class="founding-note">
+    O COMSAF foi constituído em 11 de abril de 2025, com protocolo de intenções assinado pelos prefeitos dos 13 municípios fundadores. A presidência foi conferida ao prefeito de Varzelândia, Amâncio Oliva Neto, sede do consórcio.
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi k-r">
+      <span class="kpi-val" id="k1">—</span>
+      <div class="kpi-lbl">População Total</div>
+      <div class="kpi-sub">Censo Demográfico 2022</div>
+    </div>
+    <div class="kpi k-s">
+      <span class="kpi-val" id="k2">—</span>
+      <div class="kpi-lbl">Média por Município</div>
+      <div class="kpi-sub" id="k2s">—</div>
+    </div>
+    <div class="kpi k-e">
+      <span class="kpi-val" id="k3">—</span>
+      <div class="kpi-lbl">Maior Município</div>
+      <div class="kpi-sub" id="k3s">—</div>
+    </div>
+    <div class="kpi k-g">
+      <span class="kpi-val" id="k4">—</span>
+      <div class="kpi-lbl">Menor Município</div>
+      <div class="kpi-sub" id="k4s">—</div>
+    </div>
+  </div>
+
+  <!-- GRÁFICO -->
+  <div class="sec-head">
+    <span class="sec-title">Distribuição da população</span>
+    <span class="sec-tag">13 municípios</span>
+  </div>
+  <div class="chart-box">
+    <div class="chart-ctr">
+      <canvas id="barChart" role="img" aria-label="Gráfico de barras com a população dos 13 municípios do COMSAF em ordem decrescente">Dados disponíveis na tabela abaixo.</canvas>
+    </div>
+  </div>
+
+  <!-- DOIS PAINÉIS -->
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-title">Top 5 municípios mais populosos</div>
+      <ul class="top5" id="top5"></ul>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Distribuição por faixa populacional</div>
+      <div class="donut-ctr">
+        <canvas id="donutChart" role="img" aria-label="Gráfico de rosca com distribuição por faixas de tamanho">Quatro faixas de tamanho.</canvas>
+      </div>
+      <div class="donut-leg" id="donutLeg"></div>
+    </div>
+  </div>
+
+  <!-- CARDS DOS MUNICÍPIOS -->
+  <div class="sec-head">
+    <span class="sec-title">Municípios fundadores</span>
+    <span class="sec-tag">Com prefeitos signatários</span>
+  </div>
+  <div class="mun-grid" id="munGrid"></div>
+
+  <!-- TABELA -->
+  <div class="sec-head">
+    <span class="sec-title">Tabela completa</span>
+    <span class="sec-tag">Censo 2022</span>
+  </div>
+
+  <div class="tbl-ctrl">
+    <button class="s-btn on" onclick="sortT('rank',this)">Por ranking</button>
+    <button class="s-btn" onclick="sortT('alpha',this)">A–Z</button>
+    <button class="s-btn" onclick="sortT('asc',this)">Menor → Maior</button>
+    <div class="srch-wrap">
+      <span class="srch-ico">⌕</span>
+      <input class="srch-inp" type="text" id="srch" placeholder="Buscar…" oninput="doFilter()">
+    </div>
+  </div>
+
+  <table class="dtbl">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Município</th>
+        <th>Prefeito(a) fundador(a)</th>
+        <th class="r">Habitantes</th>
+        <th class="r">% total</th>
+        <th>Porte</th>
+        <th class="bar-cell">Proporção</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+
+</main>
+
+<footer>
+  <div class="foot-inner">
+    <p>Fonte dos dados populacionais: <strong>IBGE — Censo Demográfico 2022</strong></p>
+    <p style="margin-top:4px">Constituição do consórcio: <strong>11 de abril de 2025</strong> · Protocolo de Intenções assinado pelos 13 municípios fundadores</p>
+    <p style="margin-top:4px">Consórcio Intermunicipal Multifinalitário de Gestão Pública dos Municípios do Vale do Rio São Francisco no Estado de Minas Gerais — <strong>COMSAF</strong></p>
+    <p style="margin-top:4px">Sede: Praça São Vicente, nº 36, sala 01, Centro — Varzelândia/MG · Foro: Comarca de Varzelândia</p>
+  </div>
+</footer>
+
+<script>
+// [nome, pop, prefeito]
+const dados = [
+  ["Manga",                 18882, "Anástacio Guedes Saraiva"],
+  ["Bonito de Minas",        9917, "Miquéias Mota Figueredo"],
+  ["Lontra",                 8778, "Wesley Alves de Souza"],
+  ["Matias Cardoso",         8879, "Maria de Lourdes R. da Silva Filha Cordeiro"],
+  ["Varzelândia",            7348, "Amâncio Oliva Neto"],
+  ["Cônego Marinho",         7246, "Clorisvan Lima Madureira"],
+  ["São João das Missões",  12986, "Jair Cavalcante Barbosa"],
+  ["Japonvar",               7861, "Welson Gonçalves da Silva"],
+  ["Pedras de Maria da Cruz",10445, "Heider da Silva Mendes"],
+  ["Pintópolis",             6314, "Elton Carlos José de Souza"],  // Ibiaí pop no censo; Pintópolis=6.314
+  ["Ibiracatu",              5409, "Warley Ferreira Lima"],
+  ["Campo Azul",             3615, "Arnaldo Alves Oliveira"],
+  ["São Romão",              9783, "Allan Soares Cardoso"],
+].sort((a,b) => b[1]-a[1]);
+
+const total = dados.reduce((s,d)=>s+d[1],0);
+const maxPop = dados[0][1];
+
+// KPIs
+document.getElementById('totalPop').textContent = total.toLocaleString('pt-BR');
+document.getElementById('k1').textContent = total.toLocaleString('pt-BR');
+document.getElementById('k2').textContent = Math.round(total/dados.length).toLocaleString('pt-BR');
+const sorted_asc = [...dados].sort((a,b)=>a[1]-b[1]);
+document.getElementById('k2s').textContent = 'Mediana: ' + dados[Math.floor(dados.length/2)][1].toLocaleString('pt-BR') + ' hab.';
+document.getElementById('k3').textContent = dados[0][1].toLocaleString('pt-BR');
+document.getElementById('k3s').textContent = dados[0][0] + ' — ' + (dados[0][1]/total*100).toFixed(1) + '% do total';
+const menor = dados[dados.length-1];
+document.getElementById('k4').textContent = menor[1].toLocaleString('pt-BR');
+document.getElementById('k4s').textContent = menor[0] + ' — ' + (menor[1]/total*100).toFixed(1) + '%';
+
+function tierOf(p) {
+  if (p >= 15000) return ['Médio', 'b-lg'];
+  if (p >= 8000)  return ['Pequeno','b-md'];
+  if (p >= 5000)  return ['Micro+', 'b-sm'];
+  return ['Micro', 'b-xs'];
+}
+
+// TOP 5
+dados.slice(0,5).forEach(([name,pop],i) => {
+  const bw = Math.round(pop/maxPop*100);
+  document.getElementById('top5').innerHTML += `
+    <li class="top5-row">
+      <div class="top5-n">${i+1}</div>
+      <div>
+        <div class="top5-name">${name}</div>
+        <div class="top5-bar" style="width:${bw}%"></div>
+      </div>
+      <div class="top5-pop">${pop.toLocaleString('pt-BR')}</div>
+    </li>`;
+});
+
+// BAR CHART
+new Chart(document.getElementById('barChart'), {
+  type: 'bar',
+  data: {
+    labels: dados.map(d=>d[0]),
+    datasets:[{
+      label: 'Habitantes',
+      data: dados.map(d=>d[1]),
+      backgroundColor: dados.map(d => {
+        if (d[1] >= 15000) return '#1a5c8a';
+        if (d[1] >= 8000)  return '#c8800a';
+        if (d[1] >= 5000)  return '#2d8a4e';
+        return '#6b8ba4';
+      }),
+      borderRadius: 2,
+      borderSkipped: false,
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{display:false},
+      tooltip:{
+        callbacks:{
+          label: ctx => ' ' + ctx.raw.toLocaleString('pt-BR') + ' hab.',
+          afterLabel: ctx => ' ' + (ctx.raw/total*100).toFixed(1) + '% do total'
+        },
+        backgroundColor:'#0d1f2d', titleColor:'#f8fbfd',
+        bodyColor:'rgba(248,251,253,.7)', padding:12, cornerRadius:2,
+      }
+    },
+    scales:{
+      x:{
+        ticks:{ color:'#6b8ba4', font:{size:11, family:'JetBrains Mono'}, maxRotation:42, autoSkip:false },
+        grid:{ color:'rgba(0,0,0,0.04)' }
+      },
+      y:{
+        ticks:{
+          color:'#6b8ba4', font:{size:10},
+          callback: v => v>=1000 ? (v/1000).toFixed(0)+'k' : v
+        },
+        grid:{ color:'rgba(0,0,0,0.04)' }
+      }
+    }
+  }
+});
+
+// DONUT
+const faixas = [
+  {label:'Médio (15k+)',   color:'#1a5c8a', f:p=>p>=15000},
+  {label:'Pequeno (8–15k)',color:'#c8800a', f:p=>p>=8000&&p<15000},
+  {label:'Micro+ (5–8k)',  color:'#2d8a4e', f:p=>p>=5000&&p<8000},
+  {label:'Micro (< 5k)',   color:'#6b8ba4', f:p=>p<5000},
+];
+
+const dd = faixas.map(f=>({
+  ...f,
+  count: dados.filter(d=>f.f(d[1])).length,
+  pop:   dados.filter(d=>f.f(d[1])).reduce((s,d)=>s+d[1],0)
+}));
+
+new Chart(document.getElementById('donutChart'),{
+  type:'doughnut',
+  data:{
+    labels: dd.map(d=>d.label),
+    datasets:[{
+      data: dd.map(d=>d.pop),
+      backgroundColor: dd.map(d=>d.color),
+      borderWidth:3, borderColor:'#f8fbfd', hoverOffset:6
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false, cutout:'62%',
+    plugins:{
+      legend:{display:false},
+      tooltip:{
+        callbacks:{
+          label: ctx => ' ' + ctx.raw.toLocaleString('pt-BR') + ' hab.',
+          afterLabel: ctx => ' ' + (ctx.raw/total*100).toFixed(1)+'% do total'
+        },
+        backgroundColor:'#0d1f2d', titleColor:'#f8fbfd',
+        bodyColor:'rgba(248,251,253,.7)', padding:10, cornerRadius:2,
+      }
+    }
+  }
+});
+
+const leg = document.getElementById('donutLeg');
+dd.forEach(d=>{
+  leg.innerHTML+=`
+    <div class="leg-row">
+      <div class="leg-sw" style="background:${d.color}"></div>
+      <span>${d.label} <span style="color:var(--ink-muted);font-size:10px">(${d.count} mun.)</span></span>
+      <span class="leg-pct">${(d.pop/total*100).toFixed(1)}%</span>
+    </div>`;
+});
+
+// CARDS
+const mg = document.getElementById('munGrid');
+dados.forEach(([name, pop, pref], i) => {
+  const bw = Math.round(pop/maxPop*100);
+  const pct = (pop/total*100).toFixed(1);
+  mg.innerHTML += `
+    <div class="mun-card">
+      <div class="mun-rank">${String(i+1).padStart(2,'0')} / 13</div>
+      <div class="mun-name">${name}</div>
+      <div class="mun-pop">${pop.toLocaleString('pt-BR')}</div>
+      <div class="mun-pct">${pct}% da população regional</div>
+      <div class="mun-bar-bg"><div class="mun-bar-fg" style="width:${bw}%"></div></div>
+      <div class="mun-prefeito">${pref}</div>
+    </div>`;
+});
+
+// TABLE
+let curData = [...dados];
+
+function sortT(type, btn) {
+  document.querySelectorAll('.s-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  if (type==='rank') curData=[...dados];
+  else if (type==='alpha') curData=[...dados].sort((a,b)=>a[0].localeCompare(b[0],'pt'));
+  else if (type==='asc') curData=[...dados].sort((a,b)=>a[1]-b[1]);
+  doFilter();
+}
+
+function doFilter() {
+  const q = document.getElementById('srch').value.toLowerCase();
+  renderTbl(curData.filter(d => d[0].toLowerCase().includes(q) || d[2].toLowerCase().includes(q)));
+}
+
+function renderTbl(data) {
+  const tb = document.getElementById('tbody');
+  tb.innerHTML = '';
+  data.forEach(([name, pop, pref]) => {
+    const pct = (pop/total*100).toFixed(2);
+    const bw = Math.round(pop/maxPop*100);
+    const [tl,tc] = tierOf(pop);
+    const rk = dados.findIndex(d=>d[0]===name)+1;
+    tb.innerHTML += `
+      <tr>
+        <td class="td-rank">${rk}</td>
+        <td class="td-name">${name}</td>
+        <td class="td-pref">${pref}</td>
+        <td class="td-pop">${pop.toLocaleString('pt-BR')}</td>
+        <td class="td-pct">${pct}%</td>
+        <td><span class="badge ${tc}">${tl}</span></td>
+        <td class="bar-cell"><div class="bar-bg"><div class="bar-fg" style="width:${bw}%"></div></div></td>
+      </tr>`;
+  });
+}
+
+renderTbl(dados);
+</script>
+</body>
+</html>

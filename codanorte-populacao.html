@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CODANORTE — População dos Municípios</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Source+Serif+4:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --ink:        #0f1a2e;
+    --ink-soft:   #364560;
+    --ink-muted:  #7a8aaa;
+    --paper:      #f4f7fc;
+    --paper-warm: #eaeff8;
+    --paper-deep: #d8e2f2;
+    --accent:     #c44a18;
+    --accent-lt:  #f2c4b0;
+    --accent-pale:#fdf0eb;
+    --teal:       #0f6e6e;
+    --teal-lt:    #9fd9d9;
+    --teal-pale:  #e6f6f6;
+    --gold:       #9a6c00;
+    --gold-lt:    #f0dfa0;
+    --gold-pale:  #fdf8e6;
+    --navy:       #1a3a6e;
+    --navy-lt:    #b0c8f0;
+    --rule:       #c8d5ea;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    font-size: 16px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ─── HEADER ─── */
+  header {
+    background: var(--ink);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hdr-geo {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 60% 80% at 90% 50%, rgba(196,74,24,.18) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 60% at 10% 80%, rgba(15,110,110,.15) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .hdr-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+    pointer-events: none;
+  }
+
+  .hdr-inner {
+    position: relative;
+    max-width: 1140px;
+    margin: 0 auto;
+    padding: 4.5rem 2rem 3rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2rem;
+    align-items: end;
+  }
+
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--accent-lt);
+    margin-bottom: .9rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .eyebrow::before {
+    content: '';
+    width: 28px; height: 1px;
+    background: var(--accent-lt);
+    display: inline-block;
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(3rem, 6vw, 5.5rem);
+    letter-spacing: .04em;
+    line-height: .95;
+    color: #fff;
+  }
+
+  h1 span { color: var(--accent-lt); }
+
+  .hdr-desc {
+    font-size: 13.5px;
+    color: rgba(244,247,252,.58);
+    margin-top: 1rem;
+    max-width: 500px;
+    line-height: 1.75;
+  }
+
+  .hdr-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 1.6rem;
+    align-items: flex-end;
+  }
+
+  .hdr-stat-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3.2rem;
+    color: #fff;
+    line-height: 1;
+    letter-spacing: .04em;
+    display: block;
+  }
+
+  .hdr-stat-lbl {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: rgba(244,247,252,.4);
+    margin-top: 3px;
+    display: block;
+    text-align: right;
+  }
+
+  .hdr-rule { height: 1px; background: rgba(255,255,255,.09); }
+
+  .hdr-tape {
+    max-width: 1140px;
+    margin: 0 auto;
+    padding: .7rem 2rem;
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: .08em;
+    color: rgba(244,247,252,.38);
+  }
+
+  .hdr-tape span { display: flex; align-items: center; gap: 6px; }
+  .hdr-tape span::before { content: '▸'; font-size: 7px; color: var(--accent-lt); }
+
+  /* ─── MAIN ─── */
+  main { max-width: 1140px; margin: 0 auto; padding: 3rem 2rem 5rem; }
+
+  /* ─── SEC HEAD ─── */
+  .sec-head {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 1.4rem;
+    padding-bottom: .7rem;
+    border-bottom: 1.5px solid var(--rule);
+  }
+
+  .sec-title {
+    font-family: 'Source Serif 4', serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .sec-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    border: 1px solid var(--rule);
+    padding: 2px 8px;
+    border-radius: 2px;
+  }
+
+  /* ─── KPI ─── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin: 2.5rem 0 3rem;
+  }
+
+  .kpi {
+    background: var(--paper);
+    padding: 1.5rem 1.75rem;
+    transition: background .18s;
+  }
+
+  .kpi:hover { background: var(--paper-warm); }
+
+  .kpi-val {
+    font-family: 'Source Serif 4', serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.1;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .kpi-lbl {
+    font-size: 11.5px;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: .07em;
+  }
+
+  .kpi-sub {
+    font-size: 10.5px;
+    color: var(--ink-muted);
+    margin-top: 5px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .k-acc  { border-top: 3px solid var(--accent); }
+  .k-teal { border-top: 3px solid var(--teal); }
+  .k-navy { border-top: 3px solid var(--navy); }
+  .k-gold { border-top: 3px solid var(--gold); }
+
+  /* ─── CHART WRAPPER ─── */
+  .chart-box {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 1.5rem;
+    margin-bottom: 3rem;
+  }
+
+  .chart-ctr { position: relative; width: 100%; height: 360px; }
+
+  /* ─── TWO PANELS ─── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin-bottom: 3rem;
+  }
+
+  .panel {
+    background: var(--paper);
+    padding: 1.5rem;
+  }
+
+  .panel-title {
+    font-family: 'Source Serif 4', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--ink);
+  }
+
+  /* ─── TOP 5 ─── */
+  .top5 { list-style: none; }
+
+  .top5-row {
+    display: grid;
+    grid-template-columns: 28px 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .top5-row:last-child { border-bottom: none; }
+
+  .top5-n {
+    font-family: 'Source Serif 4', serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--accent);
+    text-align: center;
+  }
+
+  .top5-name { font-weight: 500; font-size: 13.5px; }
+
+  .top5-bar {
+    height: 3px;
+    background: var(--accent);
+    margin-top: 4px;
+    border-radius: 1px;
+  }
+
+  .top5-pop {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  /* ─── DONUT ─── */
+  .donut-ctr { position: relative; width: 100%; height: 220px; }
+
+  .donut-leg {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .leg-row {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11.5px; color: var(--ink-soft);
+  }
+
+  .leg-sw {
+    width: 10px; height: 10px;
+    border-radius: 1px; flex-shrink: 0;
+  }
+
+  .leg-pct {
+    margin-left: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    color: var(--ink-muted);
+  }
+
+  /* ─── MICRORREGIÕES ─── */
+  .micro-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin-bottom: 3rem;
+  }
+
+  .micro-card {
+    background: var(--paper);
+    padding: 1.2rem 1.4rem;
+    transition: background .15s;
+  }
+
+  .micro-card:hover { background: var(--paper-warm); }
+
+  .micro-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 4px;
+  }
+
+  .micro-pop {
+    font-family: 'Source Serif 4', serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1;
+  }
+
+  .micro-count {
+    font-size: 12px;
+    color: var(--ink-muted);
+    margin-top: 4px;
+  }
+
+  .micro-bar { margin-top: 10px; height: 4px; background: var(--paper-deep); border-radius: 1px; }
+  .micro-bar-fill { height: 4px; border-radius: 1px; }
+
+  /* ─── TABLE ─── */
+  .tbl-ctrl {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .s-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all .15s;
+  }
+
+  .s-btn:hover { background: var(--paper-warm); border-color: var(--ink-muted); }
+  .s-btn.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+  .srch-wrap { margin-left: auto; position: relative; }
+
+  .srch-inp {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    padding: 6px 14px 6px 30px;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    color: var(--ink);
+    width: 210px;
+    outline: none;
+    transition: border-color .15s;
+  }
+
+  .srch-inp:focus { border-color: var(--ink-soft); }
+
+  .srch-ico {
+    position: absolute;
+    left: 10px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--ink-muted);
+    font-size: 13px;
+    pointer-events: none;
+  }
+
+  .dtbl {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid var(--rule);
+    font-size: 13.5px;
+  }
+
+  .dtbl thead tr { background: var(--ink); color: #fff; }
+
+  .dtbl th {
+    padding: 10px 15px;
+    text-align: left;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    font-weight: 400;
+  }
+
+  .dtbl th.r { text-align: right; }
+
+  .dtbl tbody tr {
+    border-bottom: 1px solid var(--rule);
+    transition: background .12s;
+  }
+
+  .dtbl tbody tr:hover { background: var(--paper-warm); }
+  .dtbl tbody tr:last-child { border-bottom: none; }
+  .dtbl td { padding: 9px 15px; vertical-align: middle; }
+
+  .td-rank { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--ink-muted); }
+  .td-name { font-weight: 500; }
+  .td-micro { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--ink-muted); }
+  .td-pop { text-align: right; font-family: 'IBM Plex Mono', monospace; font-weight: 500; }
+  .td-pct { text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: var(--ink-muted); }
+
+  .bar-cell { width: 120px; }
+  .bar-bg { height: 5px; background: var(--paper-deep); border-radius: 1px; overflow: hidden; }
+  .bar-fg { height: 5px; background: var(--accent); border-radius: 1px; }
+
+  .badge {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    padding: 2px 7px;
+    border-radius: 2px;
+    letter-spacing: .04em;
+    white-space: nowrap;
+  }
+
+  .b-lg { background: var(--navy-lt); color: var(--navy); }
+  .b-md { background: var(--gold-lt); color: var(--gold); }
+  .b-sm { background: var(--teal-lt); color: var(--teal); }
+  .b-xs { background: var(--paper-deep); color: var(--ink-muted); }
+
+  /* ─── FOOTER ─── */
+  footer {
+    background: var(--paper-warm);
+    border-top: 1px solid var(--rule);
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .foot-inner {
+    max-width: 1140px;
+    margin: 0 auto;
+    font-size: 11.5px;
+    color: var(--ink-muted);
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: .04em;
+    line-height: 1.9;
+  }
+
+  .foot-inner a { color: var(--accent); text-decoration: none; }
+  .foot-inner a:hover { text-decoration: underline; }
+
+  /* ─── ANIMATION ─── */
+  @keyframes up { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
+  .kpi, .chart-box, .panel, .dtbl, .micro-card { animation: up .45s ease both; }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 700px) {
+    .hdr-inner { grid-template-columns: 1fr; }
+    .hdr-stats { flex-direction: row; }
+    .hdr-stat-lbl { text-align: left; }
+    .two-col { grid-template-columns: 1fr; }
+    .bar-cell, .td-pct, .td-micro { display: none; }
+    h1 { font-size: 3rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="hdr-geo"></div>
+  <div class="hdr-grid"></div>
+  <div class="hdr-inner">
+    <div>
+      <div class="eyebrow">Consórcio Intermunicipal Multifinalitário — Norte de Minas</div>
+      <h1>CODA<span>NORTE</span></h1>
+      <p class="hdr-desc">Dados populacionais dos 63 municípios consorciados, abrangendo as regiões Norte, Central Mineira e Vale do Jequitinhonha. Censo Demográfico IBGE 2022.</p>
+    </div>
+    <div class="hdr-stats">
+      <div>
+        <span class="hdr-stat-num" id="totalPop">—</span>
+        <span class="hdr-stat-lbl">Habitantes totais</span>
+      </div>
+      <div>
+        <span class="hdr-stat-num">63</span>
+        <span class="hdr-stat-lbl">Municípios</span>
+      </div>
+    </div>
+  </div>
+  <div class="hdr-rule"></div>
+  <div class="hdr-tape">
+    <span>Norte de Minas Gerais</span>
+    <span>Central Mineira</span>
+    <span>Vale do Jequitinhonha</span>
+    <span>Censo IBGE 2022</span>
+    <span>Sede: Montes Claros — MG</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- KPI -->
+  <div class="kpi-grid">
+    <div class="kpi k-acc">
+      <span class="kpi-val" id="k1">—</span>
+      <div class="kpi-lbl">População Total</div>
+      <div class="kpi-sub">Censo Demográfico 2022</div>
+    </div>
+    <div class="kpi k-teal">
+      <span class="kpi-val" id="k2">—</span>
+      <div class="kpi-lbl">Média por Município</div>
+      <div class="kpi-sub" id="k2s">—</div>
+    </div>
+    <div class="kpi k-navy">
+      <span class="kpi-val" id="k3">—</span>
+      <div class="kpi-lbl">Maior Município</div>
+      <div class="kpi-sub" id="k3s">—</div>
+    </div>
+    <div class="kpi k-gold">
+      <span class="kpi-val" id="k4">—</span>
+      <div class="kpi-lbl">Menor Município</div>
+      <div class="kpi-sub" id="k4s">—</div>
+    </div>
+  </div>
+
+  <!-- GRÁFICO BARRAS -->
+  <div class="sec-head">
+    <span class="sec-title">Distribuição da população</span>
+    <span class="sec-tag">63 municípios — ordem decrescente</span>
+  </div>
+  <div class="chart-box">
+    <div class="chart-ctr">
+      <canvas id="barChart" role="img" aria-label="Gráfico de barras com população dos 63 municípios do CODANORTE em ordem decrescente">Dados disponíveis na tabela abaixo.</canvas>
+    </div>
+  </div>
+
+  <!-- DOIS PAINÉIS -->
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-title">Top 5 municípios mais populosos</div>
+      <ul class="top5" id="top5"></ul>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Concentração por faixas populacionais</div>
+      <div class="donut-ctr">
+        <canvas id="donutChart" role="img" aria-label="Gráfico de rosca com distribuição da população por faixas de tamanho">Quatro faixas de tamanho de município.</canvas>
+      </div>
+      <div class="donut-leg" id="donutLeg"></div>
+    </div>
+  </div>
+
+  <!-- MICRORREGIÕES -->
+  <div class="sec-head">
+    <span class="sec-title">Microrregiões</span>
+    <span class="sec-tag">População por região</span>
+  </div>
+  <div class="micro-grid" id="microGrid"></div>
+
+  <!-- TABELA -->
+  <div class="sec-head" style="margin-top:3rem">
+    <span class="sec-title">Todos os municípios</span>
+    <span class="sec-tag">Censo 2022</span>
+  </div>
+
+  <div class="tbl-ctrl">
+    <button class="s-btn on" onclick="sortT('rank',this)">Por ranking</button>
+    <button class="s-btn" onclick="sortT('alpha',this)">A–Z</button>
+    <button class="s-btn" onclick="sortT('asc',this)">Menor → Maior</button>
+    <button class="s-btn" onclick="sortT('micro',this)">Microrregião</button>
+    <div class="srch-wrap">
+      <span class="srch-ico">⌕</span>
+      <input class="srch-inp" type="text" id="srch" placeholder="Buscar município…" oninput="doFilter()">
+    </div>
+  </div>
+
+  <table class="dtbl">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Município</th>
+        <th>Microrregião</th>
+        <th class="r">Habitantes</th>
+        <th class="r">% total</th>
+        <th>Porte</th>
+        <th class="bar-cell">Proporção</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+
+</main>
+
+<footer>
+  <div class="foot-inner">
+    <p>Fonte: <strong>IBGE — Censo Demográfico 2022</strong> (prévia da população até 25 de dezembro de 2022)</p>
+    <p style="margin-top:4px">Consórcio Intermunicipal Multifinalitário para o Desenvolvimento Ambiental Sustentável do Norte de Minas · Montes Claros, MG · <a href="https://codanorte.mg.gov.br" target="_blank">codanorte.mg.gov.br</a></p>
+  </div>
+</footer>
+
+<script>
+// [nome, pop, microrregião]
+const dados = [
+  ["Montes Claros",      436970, "Montes Claros"],
+  ["Pirapora",            55876, "Pirapora"],
+  ["São Francisco",       51321, "Januária"],
+  ["Bocaiúva",            50185, "Bocaiúva"],
+  ["Januária",            65279, "Januária"],
+  ["Brasília de Minas",   31246, "Montes Claros"],
+  ["Várzea da Palma",     32885, "Pirapora"],
+  ["Coração de Jesus",    24951, "Montes Claros"],
+  ["Francisco Sá",        21504, "Montes Claros"],
+  ["São João da Ponte",   23840, "Montes Claros"],
+  ["Manga",               18882, "Januária"],
+  ["Itacarambi",          16355, "Januária"],
+  ["Grão Mogol",          13094, "Grão Mogol"],
+  ["Varzelândia",         18842, "Montes Claros"],
+  ["Mirabela",            13286, "Montes Claros"],
+  ["Ubaí",                11606, "Pirapora"],
+  ["Pedras de Maria da Cruz", 10445, "Januária"],
+  ["Buritizeiro",         23687, "Pirapora"],
+  ["Capitão Enéas",       14633, "Montes Claros"],
+  ["Icaraí de Minas",     10682, "Montes Claros"],
+  ["São João das Missões",12986, "Januária"],
+  ["Montalvânia",         14065, "Januária"],
+  ["Padre Carvalho",       5031, "Grão Mogol"],
+  ["Itaobim",             19025, "Vale do Jequitinhonha"],
+  ["Ibiaí",                6314, "Januária"],
+  ["Jaíba",               36945, "Janaúba"],
+  ["Lontra",               8778, "Montes Claros"],
+  ["Japonvar",             7861, "Montes Claros"],
+  ["Juramento",            3585, "Bocaiúva"],
+  ["Claro dos Poções",     7011, "Bocaiúva"],
+  ["Espinosa",            29650, "Janaúba"],
+  ["Ibiracatu",            5409, "Montes Claros"],
+  ["Monte Azul",          20345, "Janaúba"],
+  ["Lassance",             7089, "Pirapora"],
+  ["Engenheiro Navarro",   6318, "Bocaiúva"],
+  ["Buenópolis",           9058, "Central Mineira"],
+  ["Miravânia",            3984, "Januária"],
+  ["Francisco Dumont",     4472, "Bocaiúva"],
+  ["São João da Lagoa",    4818, "Montes Claros"],
+  ["Divisa Alegre",        6321, "Salinas"],
+  ["Guaraciama",           5010, "Bocaiúva"],
+  ["Matias Cardoso",       8879, "Janaúba"],
+  ["Jequitaí",             6449, "Pirapora"],
+  ["Olhos-d'Água",         5340, "Montes Claros"],
+  ["Joaquim Felício",      3778, "Central Mineira"],
+  ["Augusto de Lima",      4507, "Central Mineira"],
+  ["Bonito de Minas",      9917, "Januária"],
+  ["Josenópolis",          3607, "Grão Mogol"],
+  ["Cônego Marinho",       7246, "Januária"],
+  ["Glaucilândia",         2637, "Montes Claros"],
+  ["Patis",                5917, "Montes Claros"],
+  ["Botumirim",            5760, "Grão Mogol"],
+  ["Luislândia",           6158, "Januária"],
+  ["Juvenília",            5793, "Januária"],
+  ["Cristália",            4977, "Grão Mogol"],
+  ["Itacambira",           3880, "Grão Mogol"],
+  ["Ponto Chique",         3775, "Pirapora"],
+  ["Fruta de Leite",       4594, "Salinas"],
+  ["São João do Pacuí",    3884, "Montes Claros"],
+  ["Lagoa dos Patos",      3293, "Pirapora"],
+  ["Verdelândia",          7348, "Janaúba"],
+  ["Catuti",               4730, "Janaúba"],
+  ["Campo Azul",           3615, "Montes Claros"],
+].sort((a,b) => b[1]-a[1]);
+
+const total = dados.reduce((s,d)=>s+d[1],0);
+const maxPop = dados[0][1];
+
+// KPIs
+document.getElementById('totalPop').textContent = total.toLocaleString('pt-BR');
+document.getElementById('k1').textContent = total.toLocaleString('pt-BR');
+document.getElementById('k2').textContent = Math.round(total/dados.length).toLocaleString('pt-BR');
+document.getElementById('k2s').textContent = 'Mediana: ' + [...dados].sort((a,b)=>a[1]-b[1])[Math.floor(dados.length/2)][1].toLocaleString('pt-BR') + ' hab.';
+document.getElementById('k3').textContent = dados[0][1].toLocaleString('pt-BR');
+document.getElementById('k3s').textContent = dados[0][0] + ' — ' + (dados[0][1]/total*100).toFixed(1) + '% do total';
+const menor = dados[dados.length-1];
+document.getElementById('k4').textContent = menor[1].toLocaleString('pt-BR');
+document.getElementById('k4s').textContent = menor[0] + ' — ' + (menor[1]/total*100).toFixed(1) + '%';
+
+// Cores por microrregião
+const microColors = {
+  "Montes Claros": "#1a3a6e",
+  "Januária":      "#c44a18",
+  "Pirapora":      "#0f6e6e",
+  "Grão Mogol":    "#9a6c00",
+  "Bocaiúva":      "#5b3480",
+  "Janaúba":       "#2d6a2f",
+  "Salinas":       "#a83258",
+  "Central Mineira":"#4a5568",
+  "Vale do Jequitinhonha":"#2d4a6e",
+};
+
+function tierOf(p) {
+  if (p >= 50000) return ['Grande', 'b-lg'];
+  if (p >= 15000) return ['Médio',  'b-md'];
+  if (p >= 5000)  return ['Pequeno','b-sm'];
+  return ['Micro', 'b-xs'];
+}
+
+// TOP 5
+dados.slice(0,5).forEach(([nm,pop],i) => {
+  const bw = Math.round(pop/maxPop*100);
+  document.getElementById('top5').innerHTML += `
+    <li class="top5-row">
+      <div class="top5-n">${i+1}</div>
+      <div>
+        <div class="top5-name">${nm}</div>
+        <div class="top5-bar" style="width:${bw}%"></div>
+      </div>
+      <div class="top5-pop">${pop.toLocaleString('pt-BR')}</div>
+    </li>`;
+});
+
+// BAR CHART
+new Chart(document.getElementById('barChart'), {
+  type: 'bar',
+  data: {
+    labels: dados.map(d=>d[0]),
+    datasets:[{
+      label: 'Habitantes',
+      data: dados.map(d=>d[1]),
+      backgroundColor: dados.map(d => microColors[d[2]] || '#7a8aaa'),
+      borderRadius: 2,
+      borderSkipped: false,
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{display:false},
+      tooltip:{
+        callbacks:{
+          label: ctx => ' ' + ctx.raw.toLocaleString('pt-BR') + ' hab.',
+          afterLabel: ctx => ' ' + (ctx.raw/total*100).toFixed(1) + '% do total'
+        },
+        backgroundColor:'#0f1a2e', titleColor:'#f4f7fc',
+        bodyColor:'rgba(244,247,252,.72)', padding:12, cornerRadius:2,
+      }
+    },
+    scales:{
+      x:{
+        ticks:{ color:'#7a8aaa', font:{size:9, family:'IBM Plex Mono'}, maxRotation:55, autoSkip:false },
+        grid:{ color:'rgba(0,0,0,0.04)' }
+      },
+      y:{
+        ticks:{
+          color:'#7a8aaa', font:{size:10},
+          callback: v => v>=1000 ? (v/1000).toFixed(0)+'k' : v
+        },
+        grid:{ color:'rgba(0,0,0,0.04)' }
+      }
+    }
+  }
+});
+
+// DONUT
+const faixas = [
+  {label:'Grande (50k+)',   color:'#1a3a6e', f:p=>p>=50000},
+  {label:'Médio (15–50k)',  color:'#c44a18', f:p=>p>=15000&&p<50000},
+  {label:'Pequeno (5–15k)', color:'#0f6e6e', f:p=>p>=5000&&p<15000},
+  {label:'Micro (< 5k)',    color:'#9a6c00', f:p=>p<5000},
+];
+
+const dd = faixas.map(f=>({
+  ...f,
+  count: dados.filter(d=>f.f(d[1])).length,
+  pop:   dados.filter(d=>f.f(d[1])).reduce((s,d)=>s+d[1],0)
+}));
+
+new Chart(document.getElementById('donutChart'),{
+  type:'doughnut',
+  data:{
+    labels: dd.map(d=>d.label),
+    datasets:[{
+      data: dd.map(d=>d.pop),
+      backgroundColor: dd.map(d=>d.color),
+      borderWidth:3, borderColor:'#f4f7fc', hoverOffset:6
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false, cutout:'60%',
+    plugins:{
+      legend:{display:false},
+      tooltip:{
+        callbacks:{
+          label: ctx => ' ' + ctx.raw.toLocaleString('pt-BR') + ' hab.',
+          afterLabel: ctx => ' ' + (ctx.raw/total*100).toFixed(1)+'% do total'
+        },
+        backgroundColor:'#0f1a2e', titleColor:'#f4f7fc',
+        bodyColor:'rgba(244,247,252,.72)', padding:10, cornerRadius:2,
+      }
+    }
+  }
+});
+
+const leg = document.getElementById('donutLeg');
+dd.forEach(d=>{
+  leg.innerHTML+=`<div class="leg-row">
+    <div class="leg-sw" style="background:${d.color}"></div>
+    <span>${d.label} <span style="color:var(--ink-muted);font-size:10.5px">(${d.count} mun.)</span></span>
+    <span class="leg-pct">${(d.pop/total*100).toFixed(1)}%</span>
+  </div>`;
+});
+
+// MICRORREGIÕES
+const micros = {};
+dados.forEach(([nm,pop,mi])=>{
+  if(!micros[mi]) micros[mi]={pop:0,count:0};
+  micros[mi].pop+=pop; micros[mi].count++;
+});
+
+const microMax = Math.max(...Object.values(micros).map(m=>m.pop));
+const microSort = Object.entries(micros).sort((a,b)=>b[1].pop-a[1].pop);
+const mg = document.getElementById('microGrid');
+microSort.forEach(([name,{pop,count}])=>{
+  const bw = Math.round(pop/microMax*100);
+  const col = microColors[name]||'#7a8aaa';
+  mg.innerHTML+=`<div class="micro-card">
+    <div class="micro-name">${name}</div>
+    <div class="micro-pop">${pop.toLocaleString('pt-BR')}</div>
+    <div class="micro-count">${count} municípios · ${(pop/total*100).toFixed(1)}% do total</div>
+    <div class="micro-bar"><div class="micro-bar-fill" style="width:${bw}%;background:${col}"></div></div>
+  </div>`;
+});
+
+// TABLE
+let curData=[...dados];
+
+function sortT(type,btn){
+  document.querySelectorAll('.s-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  if(type==='rank') curData=[...dados];
+  else if(type==='alpha') curData=[...dados].sort((a,b)=>a[0].localeCompare(b[0],'pt'));
+  else if(type==='asc')   curData=[...dados].sort((a,b)=>a[1]-b[1]);
+  else if(type==='micro') curData=[...dados].sort((a,b)=>a[2].localeCompare(b[2],'pt')||b[1]-a[1]);
+  doFilter();
+}
+
+function doFilter(){
+  const q=document.getElementById('srch').value.toLowerCase();
+  renderTbl(curData.filter(d=>d[0].toLowerCase().includes(q)||d[2].toLowerCase().includes(q)));
+}
+
+function renderTbl(data){
+  const tb=document.getElementById('tbody');
+  tb.innerHTML='';
+  data.forEach(([nm,pop,mi])=>{
+    const pct=(pop/total*100).toFixed(2);
+    const bw=Math.round(pop/maxPop*100);
+    const [tl,tc]=tierOf(pop);
+    const rk=dados.findIndex(d=>d[0]===nm)+1;
+    const col=microColors[mi]||'#7a8aaa';
+    tb.innerHTML+=`<tr>
+      <td class="td-rank">${rk}</td>
+      <td class="td-name">${nm}</td>
+      <td class="td-micro"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${col};margin-right:5px;vertical-align:middle"></span>${mi}</td>
+      <td class="td-pop">${pop.toLocaleString('pt-BR')}</td>
+      <td class="td-pct">${pct}%</td>
+      <td><span class="badge ${tc}">${tl}</span></td>
+      <td class="bar-cell"><div class="bar-bg"><div class="bar-fg" style="width:${bw}%;background:${col}"></div></div></td>
+    </tr>`;
+  });
+}
+
+renderTbl(dados);
+</script>
+</body>
+</html>
