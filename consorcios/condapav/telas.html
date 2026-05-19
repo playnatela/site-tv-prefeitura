@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CONDAPAV — Levantamento de Telas TV Prefeitura</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Lora:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --green:       #2a6b3c;
+    --green-mid:   #3d8f55;
+    --green-lt:    #a8d8b8;
+    --green-pale:  #e8f5ec;
+    --gold:        #8a6200;
+    --gold-lt:     #e8cc80;
+    --gold-pale:   #fdf8e6;
+    --brown:       #6b3a1f;
+    --brown-lt:    #d4a882;
+    --brown-pale:  #faf0e8;
+    --teal:        #1a7a7a;
+    --ink:         #0d1a0f;
+    --ink-soft:    #2c4a32;
+    --ink-muted:   #6b8a72;
+    --paper:       #f7fbf8;
+    --paper-warm:  #eef7f0;
+    --paper-deep:  #d8eedd;
+    --rule:        #b0d8ba;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Lora', serif;
+    background: var(--paper);
+    color: var(--ink);
+    font-size: 16px;
+    line-height: 1.65;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--ink);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hdr-bg {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 70% 90% at 85% 110%, rgba(42,107,60,.45) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 50% at 5% 0%, rgba(61,143,85,.2) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  .hdr-tex {
+    position: absolute; inset: 0; opacity: .06;
+    background-image:
+      repeating-linear-gradient(60deg, transparent 0, transparent 14px, rgba(255,255,255,1) 14px, rgba(255,255,255,1) 16px),
+      repeating-linear-gradient(-60deg, transparent 0, transparent 14px, rgba(255,255,255,1) 14px, rgba(255,255,255,1) 16px);
+    pointer-events: none;
+  }
+
+  .hdr-inner {
+    position: relative;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 4.5rem 2rem 3rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2rem;
+    align-items: end;
+  }
+
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--green-lt);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .eyebrow::before {
+    content: '';
+    width: 28px; height: 1px;
+    background: var(--green-lt);
+    display: inline-block;
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2.8rem, 6vw, 5rem);
+    font-weight: 800;
+    line-height: .95;
+    letter-spacing: -.02em;
+    color: #fff;
+  }
+
+  h1 em { color: var(--green-lt); font-style: normal; }
+
+  .hdr-sub {
+    font-family: 'Lora', serif;
+    font-size: 13.5px;
+    font-style: italic;
+    color: rgba(247,251,248,.52);
+    margin-top: 1rem;
+    max-width: 520px;
+    line-height: 1.75;
+  }
+
+  .hdr-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    align-items: flex-end;
+  }
+
+  .hdr-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 3rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+    display: block;
+    letter-spacing: -.02em;
+  }
+
+  .hdr-lbl {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: rgba(247,251,248,.38);
+    margin-top: 3px;
+    display: block;
+    text-align: right;
+  }
+
+  .hdr-rule { height: 1px; background: rgba(255,255,255,.09); }
+
+  .hdr-tape {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: .75rem 2rem;
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .08em;
+    color: rgba(247,251,248,.36);
+  }
+
+  .hdr-tape span { display: flex; align-items: center; gap: 6px; }
+  .hdr-tape span::before { content: '◆'; font-size: 6px; color: var(--green-lt); }
+
+  /* ── MAIN ── */
+  main { max-width: 1100px; margin: 0 auto; padding: 3rem 2rem 5rem; }
+
+  /* ── SECTION HEADER ── */
+  .sec-head {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 1.5rem;
+    padding-bottom: .75rem;
+    border-bottom: 1.5px solid var(--rule);
+  }
+
+  .sec-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .sec-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    border: 1px solid var(--rule);
+    padding: 2px 8px;
+    border-radius: 2px;
+  }
+
+  /* ── KPI ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin: 2.5rem 0 3rem;
+  }
+
+  .kpi {
+    background: var(--paper);
+    padding: 1.5rem 1.75rem;
+    transition: background .15s;
+  }
+
+  .kpi:hover { background: var(--paper-warm); }
+
+  .kpi-val {
+    font-family: 'Syne', sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .kpi-lbl {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: .07em;
+  }
+
+  .kpi-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-muted);
+    margin-top: 5px;
+  }
+
+  .k-g  { border-top: 3px solid var(--green); }
+  .k-go { border-top: 3px solid var(--gold); }
+  .k-br { border-top: 3px solid var(--brown); }
+  .k-t  { border-top: 3px solid var(--teal); }
+
+  /* ── DOIS PAINEIS ── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin-bottom: 3rem;
+  }
+
+  .panel { background: var(--paper); padding: 1.5rem; }
+
+  .panel-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--ink);
+  }
+
+  .chart-ctr { position: relative; width: 100%; height: 300px; }
+  .donut-ctr { position: relative; width: 100%; height: 220px; }
+
+  .donut-leg { margin-top: .75rem; display: flex; flex-direction: column; gap: 5px; }
+  .leg-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-soft); }
+  .leg-sw { width: 10px; height: 10px; border-radius: 1px; flex-shrink: 0; }
+  .leg-pct { margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-muted); }
+
+  /* ── CARDS DE MUNICÍPIO ── */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin-bottom: 3rem;
+  }
+
+  .mun-card {
+    background: var(--paper);
+    padding: 0;
+    transition: background .15s;
+    cursor: default;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mun-card:hover { background: var(--paper-warm); }
+
+  .card-header {
+    padding: 1.2rem 1.5rem 1rem;
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .card-left {}
+
+  .card-rank {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    color: var(--ink-muted);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .card-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.15;
+  }
+
+  .card-sede-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8.5px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--paper);
+    background: var(--green);
+    padding: 2px 7px;
+    border-radius: 2px;
+    white-space: nowrap;
+    margin-top: 5px;
+    display: inline-block;
+  }
+
+  .card-telas-badge {
+    font-family: 'Syne', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--green);
+    white-space: nowrap;
+    text-align: right;
+  }
+
+  .card-telas-lbl {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-muted);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    text-align: right;
+    margin-top: 2px;
+  }
+
+  .card-body { padding: 1rem 1.5rem 1.2rem; flex: 1; }
+
+  .card-stats-row {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: .8rem;
+  }
+
+  .card-stat {}
+
+  .card-stat-val {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--ink);
+    display: block;
+    line-height: 1;
+  }
+
+  .card-stat-lbl {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-top: 2px;
+  }
+
+  .card-unidades {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-top: .7rem;
+  }
+
+  .unit-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    font-family: 'Lora', serif;
+    padding: 3px 0;
+    border-bottom: 1px solid rgba(176,216,186,.4);
+  }
+
+  .unit-row:last-child { border-bottom: none; }
+
+  .unit-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .unit-count {
+    margin-left: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-muted);
+    white-space: nowrap;
+  }
+
+  .card-note {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    color: var(--gold);
+    background: var(--gold-pale);
+    border-left: 2px solid var(--gold-lt);
+    padding: 5px 9px;
+    margin-top: .8rem;
+    line-height: 1.5;
+  }
+
+  .card-footer {
+    padding: .7rem 1.5rem;
+    background: var(--paper-warm);
+    border-top: 1px solid var(--rule);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    color: var(--ink-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .card-footer::before { content: 'CNES'; color: var(--green-mid); }
+
+  .status-ok  { color: var(--green); }
+  .status-warn { color: var(--gold); }
+
+  /* ── TABELA RESUMO ── */
+  .tbl-ctrl {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .s-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all .15s;
+  }
+
+  .s-btn:hover { background: var(--paper-warm); border-color: var(--ink-muted); }
+  .s-btn.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+  .dtbl {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid var(--rule);
+    font-size: 14px;
+  }
+
+  .dtbl thead tr { background: var(--ink); color: #fff; }
+
+  .dtbl th {
+    padding: 10px 16px;
+    text-align: left;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    font-weight: 400;
+  }
+
+  .dtbl th.r { text-align: right; }
+  .dtbl tbody tr { border-bottom: 1px solid var(--rule); transition: background .12s; }
+  .dtbl tbody tr:hover { background: var(--paper-warm); }
+  .dtbl tbody tr:last-child { border-bottom: none; }
+  .dtbl td { padding: 11px 16px; vertical-align: middle; }
+
+  .td-rank { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--ink-muted); }
+  .td-name { font-weight: 600; font-family: 'Lora', serif; }
+  .td-num  { text-align: right; font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 13px; }
+  .td-telas { text-align: right; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; color: var(--green); }
+  .td-pct  { text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: var(--ink-muted); }
+  .td-status { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .05em; }
+
+  .bar-cell { width: 120px; }
+  .bar-bg { height: 6px; background: var(--paper-deep); border-radius: 1px; overflow: hidden; }
+  .bar-fg { height: 6px; border-radius: 1px; }
+
+  /* ── OBSERVAÇÕES ── */
+  .obs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin-bottom: 3rem;
+  }
+
+  .obs-item {
+    background: var(--paper);
+    padding: 1.3rem 1.5rem;
+  }
+
+  .obs-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 6px;
+  }
+
+  .obs-text {
+    font-size: 13.5px;
+    line-height: 1.65;
+    color: var(--ink-soft);
+  }
+
+  .obs-warn { border-top: 3px solid var(--gold); }
+  .obs-info { border-top: 3px solid var(--green); }
+  .obs-note { border-top: 3px solid var(--teal); }
+
+  /* ── PENDÊNCIAS ── */
+  .pend-list {
+    list-style: none;
+    border: 1px solid var(--rule);
+    margin-bottom: 3rem;
+  }
+
+  .pend-item {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--rule);
+    font-size: 13.5px;
+    line-height: 1.6;
+    transition: background .12s;
+  }
+
+  .pend-item:last-child { border-bottom: none; }
+  .pend-item:hover { background: var(--paper-warm); }
+
+  .pend-mun {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--paper);
+    background: var(--gold);
+    padding: 2px 8px;
+    border-radius: 2px;
+    white-space: nowrap;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--ink);
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .foot-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: rgba(247,251,248,.38);
+    letter-spacing: .04em;
+    line-height: 1.9;
+  }
+
+  .foot-inner a { color: var(--green-lt); text-decoration: none; }
+  .foot-inner a:hover { text-decoration: underline; }
+  .foot-inner strong { color: rgba(247,251,248,.65); font-weight: 500; }
+
+  /* ── ANIM ── */
+  @keyframes up { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
+  .kpi, .panel, .mun-card, .dtbl, .obs-item, .pend-item { animation: up .45s ease both; }
+
+  @media (max-width: 700px) {
+    .hdr-inner { grid-template-columns: 1fr; }
+    .hdr-stats { flex-direction: row; }
+    .two-col { grid-template-columns: 1fr; }
+    .bar-cell, .td-pct { display: none; }
+    h1 { font-size: 2.6rem; }
+    .cards-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-bg"></div>
+  <div class="hdr-tex"></div>
+  <div class="hdr-inner">
+    <div>
+      <div class="eyebrow">Consórcio Público — Microrregião do Alto Paraopeba e Vertentes</div>
+      <h1>CON<em>DAPAV</em></h1>
+      <p class="hdr-sub">Levantamento de infraestrutura de saúde e potencial de telas para o sistema TV Prefeitura nos 6 municípios consorciados. Campo das Vertentes, Minas Gerais. Fontes: CNES/DATASUS · IBGE Censo 2022.</p>
+    </div>
+    <div class="hdr-stats">
+      <div>
+        <span class="hdr-num">35</span>
+        <span class="hdr-lbl">Telas estimadas</span>
+      </div>
+      <div>
+        <span class="hdr-num">6</span>
+        <span class="hdr-lbl">Municípios</span>
+      </div>
+    </div>
+  </div>
+  <div class="hdr-rule"></div>
+  <div class="hdr-tape">
+    <span>Campo das Vertentes — MG</span>
+    <span>Alto Paraopeba</span>
+    <span>Sede: Cristiano Otoni</span>
+    <span>Fundação: 23/06/2004</span>
+    <span>CNES/DATASUS · 41 registros consultados</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi k-g">
+      <span class="kpi-val">35</span>
+      <div class="kpi-lbl">Telas Estimadas</div>
+      <div class="kpi-sub">Base conservadora · 6 municípios</div>
+    </div>
+    <div class="kpi k-go">
+      <span class="kpi-val">46.903</span>
+      <div class="kpi-lbl">Habitantes Totais</div>
+      <div class="kpi-sub">Censo IBGE 2022</div>
+    </div>
+    <div class="kpi k-br">
+      <span class="kpi-val">41</span>
+      <div class="kpi-lbl">Registros CNES</div>
+      <div class="kpi-sub">Consultados · todos confirmados</div>
+    </div>
+    <div class="kpi k-t">
+      <span class="kpi-val">0,75</span>
+      <div class="kpi-lbl">Telas / Mil Hab.</div>
+      <div class="kpi-sub">Índice de cobertura</div>
+    </div>
+  </div>
+
+  <!-- GRÁFICOS -->
+  <div class="sec-head">
+    <span class="sec-title">Distribuição de telas</span>
+    <span class="sec-tag">Visão geral</span>
+  </div>
+
+  <div class="two-col" style="margin-bottom:3rem">
+    <div class="panel">
+      <div class="panel-title">Telas por município</div>
+      <div class="chart-ctr">
+        <canvas id="barChart" role="img" aria-label="Gráfico de barras com telas por município"></canvas>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Composição por categoria</div>
+      <div class="donut-ctr">
+        <canvas id="donutChart" role="img" aria-label="Gráfico de rosca com distribuição por categoria de unidade"></canvas>
+      </div>
+      <div class="donut-leg" id="donutLeg"></div>
+    </div>
+  </div>
+
+  <!-- CARDS DE MUNICÍPIO -->
+  <div class="sec-head">
+    <span class="sec-title">Os 6 municípios</span>
+    <span class="sec-tag">Detalhe por município</span>
+  </div>
+
+  <div class="cards-grid">
+
+    <!-- CARANDAÍ -->
+    <div class="mun-card">
+      <div class="card-header">
+        <div class="card-left">
+          <div class="card-rank">Ranking 1 de 6 · 51,3% da população</div>
+          <div class="card-name">Carandaí</div>
+        </div>
+        <div>
+          <div class="card-telas-badge">18</div>
+          <div class="card-telas-lbl">telas</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-stats-row">
+          <div class="card-stat">
+            <span class="card-stat-val">24.047</span>
+            <span class="card-stat-lbl">habitantes</span>
+          </div>
+          <div class="card-stat">
+            <span class="card-stat-val">22</span>
+            <span class="card-stat-lbl">registros CNES</span>
+          </div>
+          <div class="card-stat">
+            <span class="card-stat-val">18.094.797/0001-07</span>
+            <span class="card-stat-lbl">CNPJ mantenedora</span>
+          </div>
+        </div>
+        <div class="card-unidades">
+          <div class="unit-row">
+            <div class="unit-dot" style="background:var(--ink)"></div>
+            Prefeitura + Centro de Saúde (24h)
+            <span class="unit-count">2 telas</span>
+          </div>
+          <div class="unit-row">
+            <div class="unit-dot" style="background:var(--teal)"></div>
+            Centro de Especialidades + Fisioterapia
+            <span class="unit-count">2 telas</span>
+          </div>
+          <div class="unit-row">
+            <div class="unit-dot" style="background:var(--gold)"></div>
+            Farmácia de Todos
+            <span class="unit-count">1 tela</span>
+          </div>
+          <div class="unit-row">
+            <div class="unit-dot" style="background:var(--green-mid)"></div>
+            UBS / ESF urbanas (4 unidades + 1 ESF)
+            <span class="unit-count">5 telas</span>
+          </div>
+          <div class="unit-row">
+            <div class="unit-dot" style="background:var(--green)"></div>
+            Postos rurais confirmados CNES
+            <span class="unit-count">8 telas</span>
+          </div>
+        </div>
+        <div class="card-note">⚠ 9 postos rurais com CNES ativo — confirmar quais têm sala de espera regular antes da instalação.</div>
+      </div>
+      <div class="card-footer">· CNES 2213621 · 9272348 · 9549978 · 9068775 · 9865454 · 7064322 · 7066554 · 0050733 · 5546648 · e mais 9 postos rurais</div>
+    </div>
+
+    <!-- CRISTIANO OTONI -->
+    <div class="mun-card">
+      <div class="card-header">
+        <div class="card-left">
+          <div class="card-rank">Ranking 2 de 6 · 18,4% da população</div>
+          <div class="card-name">Cristiano Otoni</div>
+          <span class="card-sede-tag">Sede do CONDAPAV</span>
+        </div>
+        <div>
+          <div class="card-telas-badge">4</div>
+          <div class="card-telas-lbl">telas</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-stats-row">
+          <div class="card-stat">
+            <span class="card-stat-val">8.637</span>
+            <span class="card-stat-lbl">habitantes</span>
+          </div>
+          <div class="card-stat">
+            <span class="card-stat-val">5</span>
+            <span class="card-stat-lbl">registros CNES</span>
+          </div>
+          <div class="card-stat">
+            <span class="card-stat-val">19.718.402/0001-54</span>
+            <span class="card-stat-lbl">CNPJ mantenedora</span>
+          </div>
+        </div>
+        <div class="card-unidades">
+          <div class="unit-row">
+            <div class="unit-dot" style="background:var(--ink)"></div>
+            Prefeitura Municipal — Sede do CONDAPAV
+            <span class="unit-count">1 tela</span>
+          </div>
+          <div class="unit-row">
+            <div class="unit-dot" style="background:var(--green-mid)"></div>
+            UBS de Cristiano Otoni (referência municipal)
+            <span class="unit-count">1 tela</span>
+          </div>
+          <div class="unit-row">
+            <div class="unit-dot" style="background:var(--gold)"></div>
+            Rede Farmácia de Minas
+            <span class="unit-count">1 tela</span>
+          </div>
+          <div class="unit-row">
+            <div class="unit-dot" style="background:var(--green)"></div>
+            ESF Sagrada Família
+            <span class="unit-count">1 tela</span>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">· CNES 2136015 · 7118961 · 6852505</div>
+    </div>
+
+    <!-- SANTANA DOS MONTES -->
+    <div class="mun-card">
+      <div class="card-header">
+        <div class="card-left">
+          <div class="card-rank">Ranking 3 de 6 · 10,7% da população</div>
+          <div class="card-name">Santana dos Montes</div>
+        </div>
+        <div>
+          <div class="card-telas-badge">4–5</div>
+          <div class="card-telas-lbl">telas</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-stats-row">
+          <div class="card-stat">
+            <span class="card-stat-val">5.032</span>
+            <span class="card-stat-lbl">habitantes</span>
+          </div>
+          <div class="card-stat">
+            <span class="card-stat-val">5</span>
+            <span class="card-stat-lbl">registros CNES</span>
+          </div>
+          <div class="card-stat">
+            <span class="card-stat-val">19.718.394/0001-46</span>
+            <span class="card-stat-lbl">CNPJ mantenedora</span>
+          </div>
+        </div>
+        <div class="card-unidades">
+          <div class="unit-row">
+            <div class="unit-dot" style="background:var(--ink)"></div>
+            Prefeitura Municipal
+            <span class="unit-count">1 tela</span>
+          </div>
+          <div class="unit-row">
+            <div class="unit-dot" style="background:var(--green-mid)"></div>
+            Centro de Saúde de Santana dos Montes
+            <span class="unit-count">1 tela</span>
+          </div>
+          <div class="unit-row">
+            <div class="unit-dot" style="background:var(--gold)"></div>
+            Rede Farmácia de Minas
+            <span class="unit-count">1 tela</span>
+          </div>
+          <div class="unit-row">
+            <div class="unit-dot" style="background:var(--green)"></div>
+            UBS José de Oliveira Pinto + ESF Morro do Chapéu
+            <span class="unit-count">1–2 telas</span>
+          </div>
+        </div>
+        <div class="card-note">⚠ Confirmar se UBS José de Oliveira Pinto e ESF Morro do Chapéu são unidades físicas separadas (+1 tela).</div>
+      </div>
+      <div class="card-footer">· CNES 2202174 · 7160097 · 2202182 · 2202190</div>
+    </div>
+
+    <!-- CARANAÍBA -->
+    <div class="mun-card">
+      <div class="card-header">
+        <div class="card-left">
+          <div class="card-rank">Ranking 4 de 6 · 7,9% da população</div>
+          <div class="card-name">Caranaíba</div>
+        </div>
+        <div>
+          <div class="card-telas-badge">3–4</div>
+          <div class="card-telas-lbl">telas</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-stats-row">
+          <div class="card-stat">
+            <span class="card-stat-val">3.698</span>
+            <span class="card-stat-lbl">habitantes</span>
+          </div>
+          <div class="card-stat">
+            <span class="card-stat-val">4</span>
+            <span class="card-stat-lbl">registros CNES</span>
+          </div>
+          <div class="card-stat">
+            <span class="card-stat-val">18.094.789/0001-52</span>
+            <span class="card-stat-lbl">CNPJ mantenedora</span>
+          </div>
+        </div>
+        <div class="card-unidades">
+          <div class="unit-row">
+            <div class="unit-dot" style="background:var(--ink)"></div>
+            Prefeitura Municipal
+            <span class="unit-count">1 tela</span>
+          </div>
+          <div class="unit-row">
+            <div class="unit-dot" style="background:var(--green-mid)"></div>
+            Centro de Saúde de Caranaíba
+            <span class="unit-count">1 tela</span>
+          </div>
+          <div class="unit-row">
+            <div class="unit-dot" style="background:var(--gold)"></div>
+            Rede Farmácia de Minas
+            <span class="unit-count">1 tela</span>
+          </div>
+          <div class="unit-row">
+            <div class="unit-dot" style="background:var(--green)"></div>
+            USF Vida Saudável (confirmar se unidade separada)
+            <span class="unit-count">0–1 tela</span>
+          </div>
+        </div>
+        <div class="card-note">⚠ Confirmar se USF Vida Saudável (CNES 2213613) é unidade física separada do Centro de Saúde.</div>
+      </div>
+      <div class="card-footer">· CNES 2213605 · 7110944 · 2213613</div>
+    </div>
+
+    <!-- CASA GRANDE -->
+    <div class="mun-card">
+      <div class="card-header">
+        <div class="card-left">
+          <div class="card-rank">Ranking 5 de 6 · 6,8% da população</div>
+          <div class="card-name">Casa Grande</div>
+        </div>
+        <div>
+          <div class="card-telas-badge">2</div>
+          <div class="card-telas-lbl">telas</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-stats-row">
+          <div class="card-stat">
+            <span class="card-stat-val">3.185</span>
+            <span class="card-stat-lbl">habitantes</span>
+          </div>
+          <div class="card-stat">
+            <span class="card-stat-val">2</span>
+            <span class="card-stat-lbl">registros CNES</span>
+          </div>
+          <div class="card-stat">
+            <span class="card-stat-val">18.667.477/0001-90</span>
+            <span class="card-stat-lbl">CNPJ mantenedora</span>
+          </div>
+        </div>
+        <div class="card-unidades">
+          <div class="unit-row">
+            <div class="unit-dot" style="background:var(--ink)"></div>
+            Prefeitura Municipal (Praça São Sebastião)
+            <span class="unit-count">1 tela</span>
+          </div>
+          <div class="unit-row">
+            <div class="unit-dot" style="background:var(--green-mid)"></div>
+            UBS João Costa (única unidade de saúde)
+            <span class="unit-count">1 tela</span>
+          </div>
+        </div>
+        <div class="card-note">⚠ Único município sem Farmácia de Minas cadastrada no CNES. Verificar se o atendimento farmacêutico ocorre dentro da UBS João Costa ou em estrutura separada.</div>
+      </div>
+      <div class="card-footer">· CNES 2202220 · menor rede do consórcio</div>
+    </div>
+
+    <!-- QUELUZITO -->
+    <div class="mun-card">
+      <div class="card-header">
+        <div class="card-left">
+          <div class="card-rank">Ranking 6 de 6 · 4,9% da população</div>
+          <div class="card-name">Queluzito</div>
+        </div>
+        <div>
+          <div class="card-telas-badge">3</div>
+          <div class="card-telas-lbl">telas</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-stats-row">
+          <div class="card-stat">
+            <span class="card-stat-val">2.304</span>
+            <span class="card-stat-lbl">habitantes</span>
+          </div>
+          <div class="card-stat">
+            <span class="card-stat-val">3</span>
+            <span class="card-stat-lbl">registros CNES</span>
+          </div>
+          <div class="card-stat">
+            <span class="card-stat-val">19.718.410/0001-09</span>
+            <span class="card-stat-lbl">CNPJ mantenedora</span>
+          </div>
+        </div>
+        <div class="card-unidades">
+          <div class="unit-row">
+            <div class="unit-dot" style="background:var(--ink)"></div>
+            Prefeitura Municipal (Rua do Rosário, 04)
+            <span class="unit-count">1 tela</span>
+          </div>
+          <div class="unit-row">
+            <div class="unit-dot" style="background:var(--green-mid)"></div>
+            Centro de Saúde / PSF Anjos da Guarda
+            <span class="unit-count">1 tela</span>
+          </div>
+          <div class="unit-row">
+            <div class="unit-dot" style="background:var(--gold)"></div>
+            Farmácia de Minas de Queluzito
+            <span class="unit-count">1 tela</span>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">· CNES 2193000 · 7025971</div>
+    </div>
+
+  </div><!-- /cards-grid -->
+
+  <!-- TABELA RESUMO -->
+  <div class="sec-head">
+    <span class="sec-title">Tabela resumo</span>
+    <span class="sec-tag">CNES/DATASUS · Censo 2022</span>
+  </div>
+
+  <div class="tbl-ctrl">
+    <button class="s-btn on" onclick="sortT('rank',this)">Por ranking</button>
+    <button class="s-btn" onclick="sortT('telas',this)">Mais telas</button>
+    <button class="s-btn" onclick="sortT('alpha',this)">A–Z</button>
+  </div>
+
+  <table class="dtbl" id="tabela">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Município</th>
+        <th class="r">Habitantes</th>
+        <th class="r">Telas</th>
+        <th class="r">CNES consult.</th>
+        <th class="r">Telas / mil hab.</th>
+        <th class="bar-cell">Proporção de telas</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+    <tfoot>
+      <tr style="background:var(--paper-warm);border-top:2px solid var(--rule)">
+        <td colspan="2" style="padding:10px 16px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--ink-soft);letter-spacing:.05em;text-transform:uppercase">TOTAL GERAL</td>
+        <td class="td-num" style="padding:10px 16px">46.903</td>
+        <td class="td-telas" style="padding:10px 16px">34–36</td>
+        <td class="td-num" style="padding:10px 16px;color:var(--ink-muted)">41</td>
+        <td class="td-num" style="padding:10px 16px;color:var(--ink-muted)">0,75</td>
+        <td class="bar-cell"></td>
+        <td></td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <!-- OBSERVAÇÕES ESTRATÉGICAS -->
+  <div class="sec-head" style="margin-top:3rem">
+    <span class="sec-title">Observações estratégicas</span>
+    <span class="sec-tag">Análise</span>
+  </div>
+
+  <div class="obs-grid">
+    <div class="obs-item obs-info">
+      <div class="obs-label">Concentração em Carandaí</div>
+      <div class="obs-text">Carandaí responde por 18 das 35 telas estimadas (≈51%), proporcional à sua representatividade populacional no consórcio. É o único município com centro de especialidades médicas e fisioterapia.</div>
+    </div>
+    <div class="obs-item obs-info">
+      <div class="obs-label">Ausência de hospital</div>
+      <div class="obs-text">Nenhum município do CONDAPAV possui hospital de internação próprio no CNES. A referência hospitalar regional é Barbacena (MG), a menos de 40 km de Carandaí.</div>
+    </div>
+    <div class="obs-item obs-info">
+      <div class="obs-label">Rede Farmácia de Minas</div>
+      <div class="obs-text">5 dos 6 municípios possuem Farmácia de Minas cadastrada. Apenas Casa Grande não tem unidade própria registrada no CNES — pode estar integrada à UBS João Costa.</div>
+    </div>
+    <div class="obs-item obs-warn">
+      <div class="obs-label">Postos rurais de Carandaí</div>
+      <div class="obs-text">O município tem 9 postos rurais com CNES ativo — rede expressiva para o porte. Recomenda-se confirmar presencialmente quais possuem atendimento regular e espaço físico adequado para tela antes da proposta.</div>
+    </div>
+    <div class="obs-item obs-note">
+      <div class="obs-label">Índice de cobertura vs. COMSAF</div>
+      <div class="obs-text">CONDAPAV: 0,75 tela/mil hab. · COMSAF: ~1,1 tela/mil hab. A diferença reflete a menor disponibilidade de especialidades e ausência de hospitais na região do Alto Paraopeba.</div>
+    </div>
+    <div class="obs-item obs-note">
+      <div class="obs-label">Municípios micro</div>
+      <div class="obs-text">Casa Grande (3.185 hab.) e Queluzito (2.304 hab.) têm estrutura mínima de saúde — 2 e 3 telas respectivamente. A implantação nestes municípios é viável mas requer equipamentos de menor porte.</div>
+    </div>
+  </div>
+
+  <!-- PENDÊNCIAS -->
+  <div class="sec-head">
+    <span class="sec-title">Pendências para validação</span>
+    <span class="sec-tag">Confirmar com SMS antes da proposta</span>
+  </div>
+
+  <ul class="pend-list">
+    <li class="pend-item">
+      <span class="pend-mun">Carandaí</span>
+      Confirmar com a SMS quais dos 9 postos rurais têm público de espera regular e espaço físico adequado para tela. O total pode variar de 14 (mínimo) a 18 (todos incluídos).
+    </li>
+    <li class="pend-item">
+      <span class="pend-mun">Santana dos Montes</span>
+      Confirmar se UBS José de Oliveira Pinto (CNES 2202182) e ESF Morro do Chapéu (CNES 2202190) são unidades físicas separadas ou a mesma estrutura. Impacto: +1 tela se separadas.
+    </li>
+    <li class="pend-item">
+      <span class="pend-mun">Caranaíba</span>
+      Confirmar se USF Vida Saudável (CNES 2213613) é unidade física separada do Centro de Saúde de Caranaíba (CNES 2213605). Impacto: +1 tela se separada.
+    </li>
+    <li class="pend-item">
+      <span class="pend-mun">Casa Grande</span>
+      Único município sem Farmácia de Minas cadastrada. Verificar se há atendimento farmacêutico em estrutura separada da UBS João Costa não cadastrada no CNES.
+    </li>
+  </ul>
+
+</main>
+
+<footer>
+  <div class="foot-inner">
+    <p>Fontes: <strong>CNES/DATASUS</strong> · <strong>IBGE — Censo Demográfico 2022</strong></p>
+    <p style="margin-top:4px">Consórcio Público para o Desenvolvimento da Microrregião do Alto Paraopeba e Vertentes — <strong>CONDAPAV</strong></p>
+    <p style="margin-top:4px">Sede: Cristiano Otoni/MG · CNPJ: 06.346.208/0001-43 · Fundação: 23/06/2004 · <a href="https://condapav.mg.gov.br" target="_blank">condapav.mg.gov.br</a></p>
+    <p style="margin-top:4px">Levantamento: TV Prefeitura · Data de referência: maio 2026</p>
+  </div>
+</footer>
+
+<script>
+  // ── DADOS ──
+  const dados = [
+    { nome: 'Carandaí',          pop: 24047, telas: 18, telasTxt: '18',   cnes: 22, status: 'confirmado',  nota: false },
+    { nome: 'Cristiano Otoni',   pop:  8637, telas:  4, telasTxt: '4',    cnes:  5, status: 'confirmado',  nota: false },
+    { nome: 'Santana dos Montes',pop:  5032, telas:  4, telasTxt: '4–5',  cnes:  5, status: 'validar',     nota: true  },
+    { nome: 'Caranaíba',         pop:  3698, telas:  3, telasTxt: '3–4',  cnes:  4, status: 'validar',     nota: true  },
+    { nome: 'Casa Grande',       pop:  3185, telas:  2, telasTxt: '2',    cnes:  2, status: 'validar',     nota: true  },
+    { nome: 'Queluzito',         pop:  2304, telas:  3, telasTxt: '3',    cnes:  3, status: 'confirmado',  nota: false },
+  ];
+
+  const cores = ['#2a6b3c','#3d8f55','#8a6200','#1a7a7a','#6b3a1f','#5a6b2a'];
+  const maxTelas = Math.max(...dados.map(d => d.telas));
+
+  // ── BAR CHART ──
+  new Chart(document.getElementById('barChart'), {
+    type: 'bar',
+    data: {
+      labels: dados.map(d => d.nome),
+      datasets: [{
+        label: 'Telas',
+        data: dados.map(d => d.telas),
+        backgroundColor: dados.map((_, i) => cores[i]),
+        borderRadius: 3,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ' ' + ctx.raw + ' telas',
+            afterLabel: ctx => ' ' + (ctx.raw / dados.reduce((s,d)=>s+d.telas,0) * 100).toFixed(1) + '% do total'
+          },
+          backgroundColor: '#0d1a0f', titleColor: '#f7fbf8',
+          bodyColor: 'rgba(247,251,248,.72)', padding: 12, cornerRadius: 2,
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: '#6b8a72', font: { size: 11, family: 'JetBrains Mono' }, maxRotation: 30 },
+          grid: { color: 'rgba(0,0,0,0.04)' }
+        },
+        y: {
+          ticks: { color: '#6b8a72', font: { size: 10 }, stepSize: 2 },
+          grid: { color: 'rgba(0,0,0,0.04)' },
+          beginAtZero: true
+        }
+      }
+    }
+  });
+
+  // ── DONUT — categorias ──
+  const catDados = [
+    { label: 'Prefeituras',            val: 6,  cor: '#0d1a0f' },
+    { label: 'Unidades de Saúde (UBS/ESF)', val: 16, cor: '#2a6b3c' },
+    { label: 'Farmácias de Minas',     val: 5,  cor: '#8a6200' },
+    { label: 'Especialidades / Fisio', val: 2,  cor: '#1a7a7a' },
+    { label: 'Postos Rurais',          val: 6,  cor: '#5a6b2a' },
+  ];
+
+  new Chart(document.getElementById('donutChart'), {
+    type: 'doughnut',
+    data: {
+      labels: catDados.map(d => d.label),
+      datasets: [{
+        data: catDados.map(d => d.val),
+        backgroundColor: catDados.map(d => d.cor),
+        borderWidth: 3, borderColor: '#f7fbf8', hoverOffset: 8
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '58%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ' ' + ctx.raw + ' telas',
+            afterLabel: ctx => ' ' + (ctx.raw / 35 * 100).toFixed(1) + '% do total'
+          },
+          backgroundColor: '#0d1a0f', titleColor: '#f7fbf8',
+          bodyColor: 'rgba(247,251,248,.72)', padding: 10, cornerRadius: 2,
+        }
+      }
+    }
+  });
+
+  // Donut legend
+  const leg = document.getElementById('donutLeg');
+  catDados.forEach(d => {
+    leg.innerHTML += `
+      <div class="leg-row">
+        <div class="leg-sw" style="background:${d.cor}"></div>
+        <span>${d.label}</span>
+        <span class="leg-pct">${d.val} telas · ${(d.val/35*100).toFixed(1)}%</span>
+      </div>`;
+  });
+
+  // ── TABELA ──
+  let curData = [...dados];
+
+  function sortT(type, btn) {
+    document.querySelectorAll('.s-btn').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    if (type === 'rank')   curData = [...dados];
+    else if (type === 'telas') curData = [...dados].sort((a,b) => b.telas - a.telas);
+    else if (type === 'alpha') curData = [...dados].sort((a,b) => a.nome.localeCompare(b.nome, 'pt'));
+    renderTbl();
+  }
+
+  function renderTbl() {
+    const tb = document.getElementById('tbody');
+    tb.innerHTML = '';
+    curData.forEach((d, i) => {
+      const rk = dados.findIndex(x => x.nome === d.nome) + 1;
+      const cor = cores[rk - 1];
+      const idx = (d.telas / 1000 * (1000 / d.pop)).toFixed(2);
+      const bw = Math.round(d.telas / maxTelas * 100);
+      const statusHtml = d.status === 'confirmado'
+        ? `<span class="td-status status-ok">✅ Confirmado</span>`
+        : `<span class="td-status status-warn">⚠ Validar SMS</span>`;
+      tb.innerHTML += `
+        <tr>
+          <td class="td-rank">${rk}</td>
+          <td class="td-name">${d.nome}</td>
+          <td class="td-num">${d.pop.toLocaleString('pt-BR')}</td>
+          <td class="td-telas" style="color:${cor}">${d.telasTxt}</td>
+          <td class="td-num" style="color:var(--ink-muted)">${d.cnes}</td>
+          <td class="td-num" style="color:var(--ink-muted)">${(d.telas / d.pop * 1000).toFixed(2)}</td>
+          <td class="bar-cell"><div class="bar-bg"><div class="bar-fg" style="width:${bw}%;background:${cor}"></div></div></td>
+          <td>${statusHtml}</td>
+        </tr>`;
+    });
+  }
+
+  renderTbl();
+</script>
+</body>
+</html>
